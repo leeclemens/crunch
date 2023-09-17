@@ -6,6 +6,8 @@ description = "Crunch is a command-line interface (CLI) to claim staking rewards
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[dev-dependencies]
+tokio = "1.24.2"
 
 [dependencies]
 # crunch dependencies
@@ -25,7 +27,6 @@ reqwest = { version = "0.11", features = ["json"] }
 url = "2.2.2"
 base64 = "0.13.0"
 rand = "0.8.4"
-tokio = "1.32.0"
 # subxt dependencies
 subxt = "0.29.0"
 async-std = { version = "1.11.0", features = ["attributes", "tokio1"] }
