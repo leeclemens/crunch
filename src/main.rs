@@ -27,13 +27,52 @@ mod pools;
 mod report;
 mod runtimes;
 mod stats;
+use tokio::select;
+use tokio::signal;
+use tokio_util::sync::CancellationToken;
 
 use crate::config::CONFIG;
 use crate::crunch::Crunch;
 use log::info;
 use std::env;
 
-fn main() {
+async fn main_interruptable() {
+    let token = CancellationToken::new();
+    let cloned_token = token.clone();
+    // ... spawn application as separate task ...
+    let join_handle = tokio::spawn(async move {
+        // Wait for either cancellation or a very long time
+        tokio::select! {
+            _ = cloned_token.cancelled() => {
+                // The token was cancelled
+                5
+            }
+            _ = tokio::time::sleep(std::time::Duration::from_secs(9999)) => {
+                99
+            }
+        }
+    });
+
+    tokio::spawn(async move {
+        tokio::time::sleep(std::time::Duration::from_millis(10)).await;
+        token.cancel();
+    });
+    if config.is_mode_era {
+        return Crunch::subscribe();
+    }
+    Crunch::flakes();
+
+    match signal::ctrl_c().await {
+        Ok(()) => {},
+        Err(err) => {
+            eprintln!("Unable to listen for shutdown signal: {}", err);
+            // we also shut down in case of error
+        },
+    }
+    // send shutdown signal to application and wait
+}
+
+async fn main() {
     let config = CONFIG.clone();
     if config.is_debug {
         env::set_var("RUST_LOG", "crunch=debug,subxt=debug");
@@ -52,8 +91,5 @@ fn main() {
     if config.only_view {
         return Crunch::view();
     }
-    if config.is_mode_era {
-        return Crunch::subscribe();
-    }
-    Crunch::flakes()
+    main_interruptable().await?;
 }
