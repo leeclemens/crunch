@@ -72,6 +72,7 @@ async fn main_interruptable() {
     // send shutdown signal to application and wait
 }
 
+#[tokio::main]
 async fn main() {
     let config = CONFIG.clone();
     if config.is_debug {
